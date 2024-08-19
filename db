@@ -1,0 +1,311 @@
+-- MySQL dump 10.13  Distrib 8.0.38, for Win64 (x86_64)
+--
+-- Host: localhost    Database: negociodigital
+-- ------------------------------------------------------
+-- Server version	9.0.1
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!50503 SET NAMES utf8 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+
+--
+-- Table structure for table `carrito`
+--
+
+DROP TABLE IF EXISTS `carrito`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `carrito` (
+  `id_carrito` int NOT NULL AUTO_INCREMENT,
+  `precio_total` decimal(10,2) NOT NULL,
+  `id_cliente` int DEFAULT NULL,
+  PRIMARY KEY (`id_carrito`),
+  KEY `id_cliente` (`id_cliente`),
+  CONSTRAINT `carrito_ibfk_1` FOREIGN KEY (`id_cliente`) REFERENCES `cliente` (`id_cliente`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `carrito`
+--
+
+LOCK TABLES `carrito` WRITE;
+/*!40000 ALTER TABLE `carrito` DISABLE KEYS */;
+/*!40000 ALTER TABLE `carrito` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `cliente`
+--
+
+DROP TABLE IF EXISTS `cliente`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `cliente` (
+  `id_cliente` int NOT NULL,
+  `direccion` varchar(100) DEFAULT NULL,
+  `telefono` varchar(20) DEFAULT NULL,
+  `id_usuario` int DEFAULT NULL,
+  PRIMARY KEY (`id_cliente`),
+  KEY `id_usuario` (`id_usuario`),
+  CONSTRAINT `cliente_ibfk_1` FOREIGN KEY (`id_usuario`) REFERENCES `usuario` (`id_usuario`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `cliente`
+--
+
+LOCK TABLES `cliente` WRITE;
+/*!40000 ALTER TABLE `cliente` DISABLE KEYS */;
+INSERT INTO `cliente` VALUES (1,'Calle Falsa 123','555-1234',1),(2,'Quilmes','486-544',2);
+/*!40000 ALTER TABLE `cliente` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `factura`
+--
+
+DROP TABLE IF EXISTS `factura`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `factura` (
+  `id_factura` int NOT NULL AUTO_INCREMENT,
+  `monto_total` decimal(10,2) NOT NULL,
+  `fecha_factura` date NOT NULL,
+  `id_carrito` int DEFAULT NULL,
+  `id_pendiente` int DEFAULT NULL,
+  PRIMARY KEY (`id_factura`),
+  UNIQUE KEY `id_carrito` (`id_carrito`),
+  KEY `fk_pendientes_factura` (`id_pendiente`),
+  CONSTRAINT `factura_ibfk_1` FOREIGN KEY (`id_carrito`) REFERENCES `carrito` (`id_carrito`) ON DELETE CASCADE,
+  CONSTRAINT `fk_pendientes_factura` FOREIGN KEY (`id_pendiente`) REFERENCES `pendientesentrega` (`id_pendiente`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `factura`
+--
+
+LOCK TABLES `factura` WRITE;
+/*!40000 ALTER TABLE `factura` DISABLE KEYS */;
+/*!40000 ALTER TABLE `factura` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `listaproductos`
+--
+
+DROP TABLE IF EXISTS `listaproductos`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `listaproductos` (
+  `id_lista` int NOT NULL AUTO_INCREMENT,
+  `nombre_lista` varchar(100) NOT NULL,
+  `id_cliente` int DEFAULT NULL,
+  `id_personal` int DEFAULT NULL,
+  PRIMARY KEY (`id_lista`),
+  KEY `fk_cliente_listaproductos` (`id_cliente`),
+  KEY `fk_personalventas_listaproductos` (`id_personal`),
+  CONSTRAINT `fk_cliente_listaproductos` FOREIGN KEY (`id_cliente`) REFERENCES `cliente` (`id_cliente`) ON DELETE CASCADE,
+  CONSTRAINT `fk_personalventas_listaproductos` FOREIGN KEY (`id_personal`) REFERENCES `personalventas` (`id_personal`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `listaproductos`
+--
+
+LOCK TABLES `listaproductos` WRITE;
+/*!40000 ALTER TABLE `listaproductos` DISABLE KEYS */;
+/*!40000 ALTER TABLE `listaproductos` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `pedidosentregados`
+--
+
+DROP TABLE IF EXISTS `pedidosentregados`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `pedidosentregados` (
+  `id_entregado` int NOT NULL AUTO_INCREMENT,
+  `id_pendiente` int DEFAULT NULL,
+  `fecha_entrega` date NOT NULL,
+  `estado_entrega` enum('Entregado','No Entregado') NOT NULL,
+  PRIMARY KEY (`id_entregado`),
+  KEY `id_pendiente` (`id_pendiente`),
+  CONSTRAINT `pedidosentregados_ibfk_1` FOREIGN KEY (`id_pendiente`) REFERENCES `pendientesentrega` (`id_pendiente`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `pedidosentregados`
+--
+
+LOCK TABLES `pedidosentregados` WRITE;
+/*!40000 ALTER TABLE `pedidosentregados` DISABLE KEYS */;
+/*!40000 ALTER TABLE `pedidosentregados` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `pendientesentrega`
+--
+
+DROP TABLE IF EXISTS `pendientesentrega`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `pendientesentrega` (
+  `id_pendiente` int NOT NULL AUTO_INCREMENT,
+  `descripcion` varchar(255) NOT NULL,
+  PRIMARY KEY (`id_pendiente`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `pendientesentrega`
+--
+
+LOCK TABLES `pendientesentrega` WRITE;
+/*!40000 ALTER TABLE `pendientesentrega` DISABLE KEYS */;
+/*!40000 ALTER TABLE `pendientesentrega` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `personalventas`
+--
+
+DROP TABLE IF EXISTS `personalventas`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `personalventas` (
+  `id_personal` int NOT NULL,
+  `fecha_contratacion` date NOT NULL,
+  `salario` decimal(10,2) NOT NULL,
+  `id_usuario` int DEFAULT NULL,
+  PRIMARY KEY (`id_personal`),
+  KEY `id_usuario` (`id_usuario`),
+  CONSTRAINT `personalventas_ibfk_1` FOREIGN KEY (`id_usuario`) REFERENCES `usuario` (`id_usuario`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `personalventas`
+--
+
+LOCK TABLES `personalventas` WRITE;
+/*!40000 ALTER TABLE `personalventas` DISABLE KEYS */;
+/*!40000 ALTER TABLE `personalventas` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `producto`
+--
+
+DROP TABLE IF EXISTS `producto`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `producto` (
+  `id_producto` int NOT NULL AUTO_INCREMENT,
+  `codigo_producto` varchar(50) NOT NULL,
+  `descripcion` text NOT NULL,
+  `precio_unitario` decimal(10,2) NOT NULL,
+  `stock_disponible` int NOT NULL,
+  `id_carrito` int DEFAULT NULL,
+  `id_lista` int DEFAULT NULL,
+  PRIMARY KEY (`id_producto`),
+  UNIQUE KEY `codigo_producto` (`codigo_producto`),
+  KEY `id_carrito` (`id_carrito`),
+  KEY `id_lista` (`id_lista`),
+  CONSTRAINT `producto_ibfk_1` FOREIGN KEY (`id_carrito`) REFERENCES `carrito` (`id_carrito`) ON DELETE CASCADE,
+  CONSTRAINT `producto_ibfk_2` FOREIGN KEY (`id_lista`) REFERENCES `listaproductos` (`id_lista`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `producto`
+--
+
+LOCK TABLES `producto` WRITE;
+/*!40000 ALTER TABLE `producto` DISABLE KEYS */;
+/*!40000 ALTER TABLE `producto` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `tabla_ventas`
+--
+
+DROP TABLE IF EXISTS `tabla_ventas`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tabla_ventas` (
+  `id_venta` int NOT NULL AUTO_INCREMENT,
+  `id_cliente` int DEFAULT NULL,
+  `id_factura` int DEFAULT NULL,
+  `id_carrito` int DEFAULT NULL,
+  `fecha_venta` date NOT NULL,
+  `monto_total` decimal(10,2) NOT NULL,
+  PRIMARY KEY (`id_venta`),
+  KEY `id_cliente` (`id_cliente`),
+  KEY `id_factura` (`id_factura`),
+  KEY `id_carrito` (`id_carrito`),
+  CONSTRAINT `tabla_ventas_ibfk_1` FOREIGN KEY (`id_cliente`) REFERENCES `cliente` (`id_cliente`) ON DELETE CASCADE,
+  CONSTRAINT `tabla_ventas_ibfk_2` FOREIGN KEY (`id_factura`) REFERENCES `factura` (`id_factura`) ON DELETE CASCADE,
+  CONSTRAINT `tabla_ventas_ibfk_3` FOREIGN KEY (`id_carrito`) REFERENCES `carrito` (`id_carrito`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `tabla_ventas`
+--
+
+LOCK TABLES `tabla_ventas` WRITE;
+/*!40000 ALTER TABLE `tabla_ventas` DISABLE KEYS */;
+/*!40000 ALTER TABLE `tabla_ventas` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `usuario`
+--
+
+DROP TABLE IF EXISTS `usuario`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `usuario` (
+  `id_usuario` int NOT NULL AUTO_INCREMENT,
+  `nombre` varchar(50) NOT NULL,
+  `apellido` varchar(50) NOT NULL,
+  `email` varchar(100) NOT NULL,
+  `contraseña` varchar(255) NOT NULL,
+  PRIMARY KEY (`id_usuario`),
+  UNIQUE KEY `email` (`email`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `usuario`
+--
+
+LOCK TABLES `usuario` WRITE;
+/*!40000 ALTER TABLE `usuario` DISABLE KEYS */;
+INSERT INTO `usuario` VALUES (1,'Juan','Pérez','juan.perez@example.com','contraseña_segura'),(2,'Alvaro','Sanchez','alvagod@gmail.com','123456');
+/*!40000 ALTER TABLE `usuario` ENABLE KEYS */;
+UNLOCK TABLES;
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+
+-- Dump completed on 2024-08-19 17:01:34
