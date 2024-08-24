@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel del Personal de Ventas</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <header class="header">
+        <h1>Panel del Personal de Ventas</h1>
+    </header>
+
+    <div class="container">
+        <!-- Sección de Inicio de Sesión -->
+        <section id="login-section" class="section">
+            <h2>Iniciar Sesión</h2>
+            <form id="login-form">
+                <input type="text" id="username" placeholder="Nombre de usuario" required>
+                <input type="password" id="password" placeholder="Contraseña" required>
+                <button type="submit" class="btn">Iniciar Sesión</button>
+            </form>
+            <p id="login-message" style="color: red;"></p>
+        </section>
+
+        <!-- Sección de Gestión de Productos -->
+        <section id="manage-products-section" class="section" style="display:none;">
+            <h2>Gestión de Productos</h2>
+            <form id="add-product-form">
+                <input type="text" id="product-code" placeholder="Código de Producto" required>
+                <input type="text" id="product-desc" placeholder="Descripción" required>
+                <input type="number" id="product-price" placeholder="Precio" required>
+                <button type="submit" class="btn">Agregar Producto</button>
+            </form>
+            <h3>Lista de Productos</h3>
+            <table id="product-table">
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Descripción</th>
+                        <th>Precio</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody id="product-list">
+                    <!-- Productos se agregarán aquí dinámicamente -->
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Sección de Pedidos Pendientes -->
+        <section id="pending-orders-section" class="section" style="display:none;">
+            <h2>Pedidos Pendientes</h2>
+            <table id="order-table">
+                <thead>
+                    <tr>
+                        <th>ID Pedido</th>
+                        <th>Cliente</th>
+                        <th>Productos</th>
+                        <th>Total</th>
+                        <th>Estado</th>
+                        <th>Método de Pago</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody id="order-list">
+                    <!-- Pedidos pendientes se agregarán aquí dinámicamente -->
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Sección de Pedidos Entregados -->
+        <section id="delivered-orders-section" class="section" style="display:none;">
+            <h2>Pedidos Entregados</h2>
+            <table id="delivered-order-table">
+                <thead>
+                    <tr>
+                        <th>ID Pedido</th>
+                        <th>Cliente</th>
+                        <th>Productos</th>
+                        <th>Total</th>
+                        <th>Fecha de Entrega</th>
+                        <th>Método de Pago</th>
+                    </tr>
+                </thead>
+                <tbody id="delivered-order-list">
+                    <!-- Pedidos entregados se agregarán aquí dinámicamente -->
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Sección de Ventas -->
+        <section id="sales-section" class="section" style="display:none;">
+            <h2>Registro de Ventas</h2>
+            <table id="sales-table">
+                <thead>
+                    <tr>
+                        <th>ID Venta</th>
+                        <th>Cliente</th>
+                        <th>Productos</th>
+                        <th>Total</th>
+                        <th>Fecha</th>
+                        <th>Método de Pago</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody id="sales-list">
+                    <!-- Ventas registradas se agregarán aquí dinámicamente -->
+                </tbody>
+            </table>
+        </section>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
