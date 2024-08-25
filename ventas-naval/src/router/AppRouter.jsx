@@ -21,7 +21,7 @@ export const AppRouter = ({ query, handleInputChange, result }) => {
             index 
             element={
               <>
-                <HomePage />
+                
                 <Products result={result} />
               </>
             } 

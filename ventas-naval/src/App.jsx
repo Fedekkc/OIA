@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AppRouter } from "./router/AppRouter";
-import products from "./db/data";
+import axios from "axios";
 import Products from "./Products/Product";
 import Sidebar from "./Sidebar/Sidebar";
 import Recommended from "./Recommended/Recommended";
@@ -22,6 +22,25 @@ const Content = styled.div`
 function App() {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [query, setQuery] = useState("");
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await axios.get("http://localhost/api/products");
+        setProducts(response.data);
+      } catch (error) {
+        console.error("Error al obtener los productos:", error);
+        setError("Hubo un problema al cargar los productos.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
 
   const handleInputChange = (event) => {
     setQuery(event.target.value);
@@ -70,6 +89,14 @@ function App() {
         />
       )
     );
+  }
+
+  if (loading) {
+    return <div>Cargando productos...</div>;
+  }
+
+  if (error) {
+    return <div>{error}</div>;
   }
 
   const result = filteredData(products, selectedCategory, query);

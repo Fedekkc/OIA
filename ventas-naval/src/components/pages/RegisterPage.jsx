@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from '../../Hook/useForm';
 import styled from 'styled-components';
+import axios from 'axios';
 
 const Wrapper = styled.div`
 	display: flex;
@@ -82,6 +83,7 @@ const Button = styled.button`
 	}
 `;
 
+
 export const RegisterPage = () => {
 	const navigate = useNavigate();
 
@@ -91,16 +93,33 @@ export const RegisterPage = () => {
 		password: '',
 	});
 
-	const onRegister = e => {
+	const onRegister = async (e) => {
 		e.preventDefault();
 
-		navigate('/dashboard', {
-			replace: true,
-			state: {
-				logged: true,
+		try {
+			// Enviar la solicitud de registro al servidor
+			const response = await axios.post('http://localhost/api/register', {
 				name,
-			},
-		});
+				email,
+				password,
+			});
+
+			if (response.data.success) {
+				navigate('/dashboard', {
+					replace: true,
+					state: {
+						logged: true,
+						name: response.data.name || name,
+					},
+				});
+			} else {
+				// Manejar el caso en que el registro falle
+				alert('No se pudo completar el registro. Inténtalo de nuevo.');
+			}
+		} catch (error) {
+			console.error('Error al registrarse:', error);
+			alert('Hubo un problema al intentar registrarse');
+		}
 
 		onResetForm();
 	};

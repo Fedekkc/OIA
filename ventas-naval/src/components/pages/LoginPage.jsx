@@ -1,27 +1,44 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from '../../Hook/useForm';
+import axios from 'axios';
 
 export const LoginPage = () => {
 	const navigate = useNavigate();
 
-	const { name, email, password, onInputChange, onResetForm } =
-		useForm({
-			name: '',
-			email: '',
-			password: '',
-		});
+	const { name, email, password, onInputChange, onResetForm } = useForm({
+		name: '',
+		email: '',
+		password: '',
+	});
 
-	const onLogin = e => {
+	const onLogin = async (e) => {
 		e.preventDefault();
 
-		navigate('/dashboard', {
-			replace: true,
-			state: {
-				logged: true,
+		try {
+			// Enviar la solicitud de inicio de sesión al servidor
+			const response = await axios.post('http://localhost/api/login', {
 				name,
-			},
-		});
+				email,
+				password,
+			});
+
+			if (response.data.success) {
+				navigate('/dashboard', {
+					replace: true,
+					state: {
+						logged: true,
+						name: response.data.name,
+					},
+				});
+			} else {
+				// Manejar el caso en que la autenticación falle
+				alert('Usuario o contraseña incorrectos');
+			}
+		} catch (error) {
+			console.error('Error al iniciar sesión:', error);
+			alert('Hubo un problema al intentar iniciar sesión');
+		}
 
 		onResetForm();
 	};
