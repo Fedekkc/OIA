@@ -8,6 +8,8 @@ import {
 } from '../components/pages';
 import { PrivateRoute } from './PrivateRoute';
 import Products from '../Products/Product';
+import PersonalVentas from '../PersonalVentas/PersonalVentas';
+
 
 export const AppRouter = ({ query, handleInputChange, result }) => {
 	return (
@@ -36,6 +38,7 @@ export const AppRouter = ({ query, handleInputChange, result }) => {
 							</PrivateRoute>
 						}
 					/>
+					<Route path='personal_ventas' element={<PersonalVentas />} />
 				</Route>
 			</Routes>
 		</>

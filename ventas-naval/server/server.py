@@ -83,8 +83,12 @@ def token_required(f):
         try:
             data = jwt.decode(token, app.config['SECRET_KEY'], algorithms=["HS256"])
             current_user = Usuario.query.filter_by(id_usuario=data['id_usuario']).first()
-        except:
-            return jsonify({'message': 'Token is invalid!'}), 403
+            if not current_user:
+                return jsonify({'message': 'User not found!'}), 404
+        except jwt.ExpiredSignatureError:
+            return jsonify({'message': 'Token has expired!'}), 401
+        except jwt.InvalidTokenError:
+            return jsonify({'message': 'Token is invalid!'}), 401
         return f(current_user, *args, **kwargs)
     return decorated
 
@@ -92,129 +96,164 @@ def token_required(f):
 @app.route('/register', methods=['POST'])
 def register():
     data = request.get_json()
+    if not data or not data.get('email') or not data.get('contraseña'):
+        return jsonify({'message': 'Invalid input!'}), 400
     hashed_password = generate_password_hash(data['contraseña'], method='sha256')
-    new_user = Usuario(nombre=data['nombre'], email=data['email'], contraseña=hashed_password, rol='cliente')
-    db.session.add(new_user)
-    db.session.commit()
-    return jsonify({'message': 'Nuevo usuario registrado.'})
+    try:
+        new_user = Usuario(nombre=data['nombre'], email=data['email'], contraseña=hashed_password, rol='cliente')
+        db.session.add(new_user)
+        db.session.commit()
+        return jsonify({'message': 'Nuevo usuario registrado.'}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': 'Error al registrar usuario.', 'error': str(e)}), 500
 
 @app.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
+    if not data or not data.get('email') or not data.get('contraseña'):
+        return jsonify({'message': 'Invalid input!'}), 400
     user = Usuario.query.filter_by(email=data['email']).first()
     if not user or not check_password_hash(user.contraseña, data['contraseña']):
         return jsonify({'message': 'Login failed! Check your credentials.'}), 401
-    token = jwt.encode({'id_usuario': user.id_usuario, 'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=24)}, app.config['SECRET_KEY'], algorithm="HS256")
-    return jsonify({'token': token})
+    try:
+        token = jwt.encode({'id_usuario': user.id_usuario, 'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=24)}, app.config['SECRET_KEY'], algorithm="HS256")
+        return jsonify({'token': token}), 200
+    except Exception as e:
+        return jsonify({'message': 'Error generating token.', 'error': str(e)}), 500
 
 @app.route('/productos', methods=['GET'])
 @token_required
 def get_productos(current_user):
-    productos = Producto.query.all()
-    output = []
-    for producto in productos:
-        producto_data = {'codigo_producto': producto.codigo_producto, 'descripcion': producto.descripcion, 'precio_unitario': str(producto.precio_unitario)}
-        output.append(producto_data)
-    return jsonify({'productos': output})
+    try:
+        productos = Producto.query.all()
+        output = [{'codigo_producto': producto.codigo_producto, 'descripcion': producto.descripcion, 'precio_unitario': str(producto.precio_unitario)} for producto in productos]
+        return jsonify({'productos': output}), 200
+    except Exception as e:
+        return jsonify({'message': 'Error retrieving products.', 'error': str(e)}), 500
 
 @app.route('/carrito', methods=['POST'])
 @token_required
 def add_to_carrito(current_user):
     data = request.get_json()
-    new_carrito = Carrito(id_usuario=current_user.id_usuario)
-    db.session.add(new_carrito)
-    db.session.commit()
-    for item in data['items']:
-        producto = Producto.query.filter_by(id_producto=item['id_producto']).first()
-        if producto:
-            subtotal = producto.precio_unitario * item['cantidad']
-            carrito_producto = CarritoProducto(id_carrito=new_carrito.id_carrito, id_producto=item['id_producto'], cantidad=item['cantidad'], precio_subtotal=subtotal)
-            db.session.add(carrito_producto)
-            new_carrito.precio_total += subtotal
-    db.session.commit()
-    return jsonify({'message': 'Productos agregados al carrito.'})
+    if not data or not data.get('items'):
+        return jsonify({'message': 'No items provided!'}), 400
+    try:
+        new_carrito = Carrito(id_usuario=current_user.id_usuario)
+        db.session.add(new_carrito)
+        db.session.commit()
+
+        for item in data['items']:
+            producto = Producto.query.filter_by(id_producto=item['id_producto']).first()
+            if producto:
+                subtotal = producto.precio_unitario * item['cantidad']
+                carrito_producto = CarritoProducto(id_carrito=new_carrito.id_carrito, id_producto=item['id_producto'], cantidad=item['cantidad'], precio_subtotal=subtotal)
+                db.session.add(carrito_producto)
+                new_carrito.precio_total += subtotal
+
+        db.session.commit()
+        return jsonify({'message': 'Productos agregados al carrito.'}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': 'Error al agregar productos al carrito.', 'error': str(e)}), 500
 
 @app.route('/pedidos/pendientes', methods=['GET'])
 @token_required
 def get_pedidos_pendientes(current_user):
-    pedidos = PedidoPendiente.query.join(Factura).filter(Factura.id_carrito == Carrito.id_carrito, Carrito.id_usuario == current_user.id_usuario).all()
-    output = []
-    for pedido in pedidos:
-        pedido_data = {'id_pedido': pedido.id_pedido_pendiente, 'fecha_pedido': pedido.fecha_pedido, 'total': str(pedido.factura.total)}
-        output.append(pedido_data)
-    return jsonify({'pedidos_pendientes': output})
+    try:
+        pedidos = PedidoPendiente.query.join(Factura).filter(Factura.id_carrito == Carrito.id_carrito, Carrito.id_usuario == current_user.id_usuario).all()
+        output = [{'id_pedido': pedido.id_pedido_pendiente, 'fecha_pedido': pedido.fecha_pedido, 'total': str(pedido.factura.total)} for pedido in pedidos]
+        return jsonify({'pedidos_pendientes': output}), 200
+    except Exception as e:
+        return jsonify({'message': 'Error retrieving pending orders.', 'error': str(e)}), 500
 
 @app.route('/pedidos/pendientes/<int:id>', methods=['PUT'])
 @token_required
 def update_pedido_pendiente(current_user, id):
     pedido = PedidoPendiente.query.get(id)
     if not pedido:
-        return jsonify({'message': 'Pedido no encontrado.'})
+        return jsonify({'message': 'Pedido no encontrado.'}), 404
     data = request.get_json()
-    # Actualizar el pedido con los datos proporcionados
-    db.session.commit()
-    return jsonify({'message': 'Pedido actualizado.'})
+    try:
+        # Actualizar el pedido con los datos proporcionados
+        db.session.commit()
+        return jsonify({'message': 'Pedido actualizado.'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': 'Error updating order.', 'error': str(e)}), 500
 
 @app.route('/pedidos/pendientes/<int:id>', methods=['DELETE'])
 @token_required
 def delete_pedido_pendiente(current_user, id):
     pedido = PedidoPendiente.query.get(id)
     if not pedido:
-        return jsonify({'message': 'Pedido no encontrado.'})
-    db.session.delete(pedido)
-    db.session.commit()
-    return jsonify({'message': 'Pedido eliminado.'})
+        return jsonify({'message': 'Pedido no encontrado.'}), 404
+    try:
+        db.session.delete(pedido)
+        db.session.commit()
+        return jsonify({'message': 'Pedido eliminado.'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': 'Error deleting order.', 'error': str(e)}), 500
 
-# Rutas para personal de ventas
-@app.route('/productos', methods=['POST'])
+@app.route('/factura', methods=['POST'])
 @token_required
-def create_producto(current_user):
-    if current_user.rol != 'personal_ventas':
-        return jsonify({'message': 'No autorizado.'})
+def crear_factura(current_user):
     data = request.get_json()
-    new_producto = Producto(codigo_producto=data['codigo_producto'], descripcion=data['descripcion'], precio_unitario=data['precio_unitario'])
-    db.session.add(new_producto)
-    db.session.commit()
-    return jsonify({'message': 'Producto creado.'})
+    if not data or not data.get('id_carrito'):
+        return jsonify({'message': 'Invalid input!'}), 400
+    carrito = Carrito.query.get(data['id_carrito'])
+    if not carrito:
+        return jsonify({'message': 'Carrito no encontrado!'}), 404
+    try:
+        nueva_factura = Factura(id_carrito=carrito.id_carrito, total=carrito.precio_total)
+        db.session.add(nueva_factura)
+        db.session.commit()
+        return jsonify({'message': 'Factura creada.', 'id_factura': nueva_factura.id_factura}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': 'Error al crear factura.', 'error': str(e)}), 500
 
-@app.route('/pedidos/pendientes', methods=['GET'])
+@app.route('/factura/<int:id>', methods=['GET'])
 @token_required
-def get_all_pedidos_pendientes(current_user):
-    if current_user.rol != 'personal_ventas':
-        return jsonify({'message': 'No autorizado.'})
-    pedidos = PedidoPendiente.query.all()
-    output = []
-    for pedido in pedidos:
-        pedido_data = {'id_pedido': pedido.id_pedido_pendiente, 'fecha_pedido': pedido.fecha_pedido, 'total': str(pedido.factura.total)}
-        output.append(pedido_data)
-    return jsonify({'pedidos_pendientes': output})
+def get_factura(current_user, id):
+    factura = Factura.query.get(id)
+    if not factura:
+        return jsonify({'message': 'Factura no encontrada.'}), 404
+    try:
+        return jsonify({'id_factura': factura.id_factura, 'total': str(factura.total), 'estado': factura.estado}), 200
+    except Exception as e:
+        return jsonify({'message': 'Error retrieving invoice.', 'error': str(e)}), 500
 
-@app.route('/pedidos/entregar/<int:id>', methods=['POST'])
+@app.route('/factura/<int:id>', methods=['PUT'])
 @token_required
-def entregar_pedido(current_user, id):
-    if current_user.rol != 'personal_ventas':
-        return jsonify({'message': 'No autorizado.'})
-    pedido = PedidoPendiente.query.get(id)
-    if not pedido:
-        return jsonify({'message': 'Pedido no encontrado.'})
-    factura = Factura.query.get(pedido.id_factura)
-    new_entrega = PedidoEntregado(id_factura=factura.id_factura)
-    db.session.add(new_entrega)
-    db.session.delete(pedido)
-    db.session.commit()
-    return jsonify({'message': 'Pedido entregado.'})
+def update_factura(current_user, id):
+    data = request.get_json()
+    factura = Factura.query.get(id)
+    if not factura:
+        return jsonify({'message': 'Factura no encontrada.'}), 404
+    try:
+        factura.estado = data.get('estado', factura.estado)
+        db.session.commit()
+        return jsonify({'message': 'Factura actualizada.'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': 'Error updating invoice.', 'error': str(e)}), 500
 
-@app.route('/ventas', methods=['GET'])
+@app.route('/factura/<int:id>', methods=['DELETE'])
 @token_required
-def get_ventas(current_user):
-    if current_user.rol != 'personal_ventas':
-        return jsonify({'message': 'No autorizado.'})
-    ventas = Venta.query.all()
-    output = []
-    for venta in ventas:
-        venta_data = {'id_venta': venta.id_venta, 'fecha_venta': venta.fecha_venta, 'total': str(venta.total)}
-        output.append(venta_data)
-    return jsonify({'ventas': output})
+def delete_factura(current_user, id):
+    factura = Factura.query.get(id)
+    if not factura:
+        return jsonify({'message': 'Factura no encontrada.'}), 404
+    try:
+        db.session.delete(factura)
+        db.session.commit()
+        return jsonify({'message': 'Factura eliminada.'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': 'Error deleting invoice.', 'error': str(e)}), 500
 
+# Ejecutar la aplicación
 if __name__ == '__main__':
     app.run(debug=True)

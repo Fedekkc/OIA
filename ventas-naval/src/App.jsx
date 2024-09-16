@@ -19,6 +19,19 @@ const Content = styled.div`
   padding: 20px;
 `;
 
+const Loading = styled.div`
+  font-size: 18px;
+  text-align: center;
+  margin-top: 20px;
+`;
+
+const Error = styled.div`
+  color: red;
+  font-size: 18px;
+  text-align: center;
+  margin-top: 20px;
+`;
+
 function App() {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [query, setQuery] = useState("");
@@ -29,7 +42,7 @@ function App() {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await axios.get("http://localhost/api/products");
+        const response = await axios.get("http://localhost:5000/products");
         setProducts(response.data);
       } catch (error) {
         console.error("Error al obtener los productos:", error);
@@ -46,10 +59,6 @@ function App() {
     setQuery(event.target.value);
   };
 
-  const filteredItems = products.filter(
-    (product) => product.title.toLowerCase().indexOf(query.toLowerCase()) !== -1
-  );
-
   const handleChange = (event) => {
     setSelectedCategory(event.target.value);
   };
@@ -58,13 +67,17 @@ function App() {
     setSelectedCategory(event.target.value);
   };
 
-  function filteredData(products, selected, query) {
+  const filteredData = (products, selected, query) => {
     let filteredProducts = products;
 
+    // Filtrado por búsqueda
     if (query) {
-      filteredProducts = filteredItems;
+      filteredProducts = filteredProducts.filter((product) =>
+        product.title.toLowerCase().includes(query.toLowerCase())
+      );
     }
 
+    // Filtrado por categoría, color, empresa, etc.
     if (selected) {
       filteredProducts = filteredProducts.filter(
         ({ category, color, company, newPrice, title }) =>
@@ -76,10 +89,11 @@ function App() {
       );
     }
 
+    // Retornar los productos filtrados en un componente visual
     return filteredProducts.map(
-      ({ img, title, star, reviews, prevPrice, newPrice }) => (
+      ({ id, img, title, star, reviews, prevPrice, newPrice }) => (
         <Card
-          key={Math.random()}
+          key={id}
           img={img}
           title={title}
           star={star}
@@ -89,15 +103,9 @@ function App() {
         />
       )
     );
-  }
+  };
 
-  if (loading) {
-    return <div>Cargando productos...</div>;
-  }
 
-  if (error) {
-    return <div>{error}</div>;
-  }
 
   const result = filteredData(products, selectedCategory, query);
 

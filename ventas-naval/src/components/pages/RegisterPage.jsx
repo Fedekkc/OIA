@@ -98,7 +98,7 @@ export const RegisterPage = () => {
 
 		try {
 			// Enviar la solicitud de registro al servidor
-			const response = await axios.post('http://localhost/api/register', {
+			const response = await axios.post('http://localhost:5000/register', {
 				name,
 				email,
 				password,

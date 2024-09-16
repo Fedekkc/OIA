@@ -72,22 +72,22 @@ const Panel = () => {
   }, []);
 
   const fetchProducts = async () => {
-    const response = await axios.get('/api/products');
+    const response = await axios.get('/products');
     setProducts(response.data);
   };
 
   const fetchPendingOrders = async () => {
-    const response = await axios.get('/api/orders/pending');
+    const response = await axios.get('/orders/pending');
     setPendingOrders(response.data);
   };
 
   const fetchDeliveredOrders = async () => {
-    const response = await axios.get('/api/orders/delivered');
+    const response = await axios.get('/orders/delivered');
     setDeliveredOrders(response.data);
   };
 
   const fetchSales = async () => {
-    const response = await axios.get('/api/sales');
+    const response = await axios.get('/sales');
     setSales(response.data);
   };
 
@@ -97,7 +97,7 @@ const Panel = () => {
     const password = e.target.password.value;
 
     try {
-      const response = await axios.post('/api/login', { username, password });
+      const response = await axios.post('/login', { username, password });
       if (response.data.success) {
         setSectionVisible({
           login: false,
