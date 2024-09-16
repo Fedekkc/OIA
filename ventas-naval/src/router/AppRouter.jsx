@@ -8,7 +8,7 @@ import {
 } from '../components/pages';
 import { PrivateRoute } from './PrivateRoute';
 import Products from '../Products/Product';
-import PersonalVentas from '../PersonalVentas/PersonalVentas';
+import PersonalVentas from '../components/personalVentas';
 
 
 export const AppRouter = ({ query, handleInputChange, result }) => {

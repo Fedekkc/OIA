@@ -4,8 +4,12 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import jwt
 import datetime
 from functools import wraps
+from flask_cors import CORS
+
+
 
 app = Flask(__name__)
+CORS(app)
 
 # Configuración de la base de datos
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:root@localhost/negociodigital'
@@ -111,6 +115,7 @@ def register():
 @app.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
+    print(data)
     if not data or not data.get('email') or not data.get('contraseña'):
         return jsonify({'message': 'Invalid input!'}), 400
     user = Usuario.query.filter_by(email=data['email']).first()
@@ -118,7 +123,7 @@ def login():
         return jsonify({'message': 'Login failed! Check your credentials.'}), 401
     try:
         token = jwt.encode({'id_usuario': user.id_usuario, 'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=24)}, app.config['SECRET_KEY'], algorithm="HS256")
-        return jsonify({'token': token}), 200
+        return jsonify({'token': token}), 201
     except Exception as e:
         return jsonify({'message': 'Error generating token.', 'error': str(e)}), 500
 
