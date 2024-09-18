@@ -76,6 +76,26 @@ const LogoutButton = styled.button`
   }
 `;
 
+const LogoImg = styled.img`
+  width: 50px;
+  height: 50px;
+`;
+
+const AdminPanelButton = styled.button`
+  padding: 5px 10px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 5px;
+  background-color: #007bff;
+  color: white;
+  cursor: pointer;
+  
+  &:hover {
+    background-color: #0056b3;
+  }
+`;
+
+
 const Nav = ({ handleInputChange, query }) => {
   const { state } = useLocation();
   const navigate = useNavigate();
@@ -84,18 +104,31 @@ const Nav = ({ handleInputChange, query }) => {
     navigate('/login', { replace: true });
   };
 
+  const handleAdminPanelClick = () => {
+    const token = state?.token;
+    console.log(token)
+    if (token) {
+      navigate('/personal_ventas', {
+        state: { token },
+      });
+    } else {
+      navigate('/login');
+    }
+  };
+  
+
   return (
     <>
       <Header>
         <NavContainer>
           <Logo>
-            <Link to="/">Logo</Link>
+            <Link to="/"> <LogoImg src='escudo naval.jpeg' alt='logo'></LogoImg> </Link>
           </Logo>
           <SearchInput
             type="text"
             onChange={handleInputChange}
             value={query}
-            placeholder="Enter your search shoes."
+            placeholder="Buscar"
           />
         </NavContainer>
 
@@ -105,6 +138,10 @@ const Nav = ({ handleInputChange, query }) => {
             <NavIcons as={FiHeart} />
             <NavIcons as={AiOutlineShoppingCart} />
             <NavIcons as={AiOutlineUserAdd} />
+            <AdminPanelButton onClick={ handleAdminPanelClick }>
+              Panel de administrador
+            </AdminPanelButton>
+
             <LogoutButton onClick={onLogout}>Cerrar sesión</LogoutButton>
           </ProfileContainer>
         ) : (
@@ -112,7 +149,7 @@ const Nav = ({ handleInputChange, query }) => {
             <Link to="/login">
               <NavIcons as={FiHeart} />
             </Link>
-            <Link to="#">
+            <Link to="/cart">
               <NavIcons as={AiOutlineShoppingCart} />
             </Link>
             <Link to="/register">

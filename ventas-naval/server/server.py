@@ -22,9 +22,9 @@ db = SQLAlchemy(app)
 class Usuario(db.Model):
     __tablename__ = 'usuario'
     id_usuario = db.Column(db.Integer, primary_key=True)
-    nombre = db.Column(db.String(100), nullable=False)
+    name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(100), unique=True, nullable=False)
-    contraseña = db.Column(db.String(255), nullable=False)
+    password = db.Column(db.String(255), nullable=False)
     rol = db.Column(db.Enum('cliente', 'personal_ventas'), nullable=False)
     fecha_creacion = db.Column(db.TIMESTAMP, nullable=True, default=datetime.datetime.utcnow)
 
@@ -96,15 +96,17 @@ def token_required(f):
         return f(current_user, *args, **kwargs)
     return decorated
 
+
+
 # Rutas para clientes
 @app.route('/register', methods=['POST'])
 def register():
     data = request.get_json()
-    if not data or not data.get('email') or not data.get('contraseña'):
+    if not data or not data.get('email') or not data.get('password'):
         return jsonify({'message': 'Invalid input!'}), 400
-    hashed_password = generate_password_hash(data['contraseña'], method='sha256')
+    hashed_password = generate_password_hash(data.get('password'), method='pbkdf2:sha256')
     try:
-        new_user = Usuario(nombre=data['nombre'], email=data['email'], contraseña=hashed_password, rol='cliente')
+        new_user = Usuario(name=data.get('name'), email=data.get('email'), password=hashed_password, rol='cliente')
         db.session.add(new_user)
         db.session.commit()
         return jsonify({'message': 'Nuevo usuario registrado.'}), 201
@@ -116,21 +118,45 @@ def register():
 def login():
     data = request.get_json()
     print(data)
-    if not data or not data.get('email') or not data.get('contraseña'):
+    
+    # Verificación de entrada
+    if not data or not data.get('email') or not data.get('password'):
         return jsonify({'message': 'Invalid input!'}), 400
+    
+    # Buscar usuario por email
     user = Usuario.query.filter_by(email=data['email']).first()
-    if not user or not check_password_hash(user.contraseña, data['contraseña']):
+    
+    
+    # Verificación de credenciales
+    if not user or not check_password_hash(user.password, data['password']):
         return jsonify({'message': 'Login failed! Check your credentials.'}), 401
+    
     try:
-        token = jwt.encode({'id_usuario': user.id_usuario, 'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=24)}, app.config['SECRET_KEY'], algorithm="HS256")
-        return jsonify({'token': token}), 201
+        # obtener el rol del usuario
+        rol = user.rol
+        name = user.name
+
+
+        # Generar JWT token con el algoritmo correcto (HS256)
+        token = jwt.encode(
+            {
+                'id_usuario': user.id_usuario,
+                'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=24)
+            }, 
+            app.config['SECRET_KEY'], 
+            algorithm="HS256"
+        )
+        print(token)
+        # Devolver el token en la respuesta
+        print(rol)
+        return jsonify({'token': token, 'rol': rol, 'name': name}), 200
+    
     except Exception as e:
         return jsonify({'message': 'Error generating token.', 'error': str(e)}), 500
-
 @app.route('/productos', methods=['GET'])
-@token_required
-def get_productos(current_user):
+def get_productos():
     try:
+
         productos = Producto.query.all()
         output = [{'codigo_producto': producto.codigo_producto, 'descripcion': producto.descripcion, 'precio_unitario': str(producto.precio_unitario)} for producto in productos]
         return jsonify({'productos': output}), 200
@@ -161,6 +187,16 @@ def add_to_carrito(current_user):
     except Exception as e:
         db.session.rollback()
         return jsonify({'message': 'Error al agregar productos al carrito.', 'error': str(e)}), 500
+
+@app.route('/pedidos/entregados', methods=['GET'])
+@token_required
+def get_pedidos_entregados(current_user):
+    try:
+        pedidos = PedidoEntregado.query.join(Factura).filter(Factura.id_carrito == Carrito.id_carrito, Carrito.id_usuario == current_user.id_usuario).all()
+        output = [{'id_pedido': pedido.id_pedido_entregado, 'fecha_entrega': pedido.fecha_entrega, 'total': str(pedido.venta.total)} for pedido in pedidos]
+        return jsonify({'pedidos_entregados': output}), 200
+    except Exception as e:
+        return jsonify({'message': 'Error retrieving delivered orders.', 'error': str(e)}), 500
 
 @app.route('/pedidos/pendientes', methods=['GET'])
 @token_required
@@ -200,6 +236,17 @@ def delete_pedido_pendiente(current_user, id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'message': 'Error deleting order.', 'error': str(e)}), 500
+
+
+@app.route('/facturas', methods=['GET'])
+@token_required
+def get_facturas(current_user):
+    try:
+        facturas = Factura.query.join(Carrito).filter(Carrito.id_usuario == current_user.id_usuario).all()
+        output = [{'id_factura': factura.id_factura, 'total': str(factura.total), 'estado': factura.estado} for factura in facturas]
+        return jsonify({'facturas': output}), 200
+    except Exception as e:
+        return jsonify({'message': 'Error retrieving invoices.', 'error': str(e)}), 500
 
 @app.route('/factura', methods=['POST'])
 @token_required

@@ -1,20 +1,14 @@
 import { BsFillBagFill } from "react-icons/bs";
 
-const Card = ({ img, title, star, reviews, prevPrice, newPrice }) => {
+const Card = ({ codigo_producto, descripcion, precio_unitario }) => {
   return (
     <>
       <section className="card">
-        <img src={img} alt={title} className="card-img" />
         <div className="card-details">
-          <h3 className="card-title">{title}</h3>
-          <section className="card-reviews">
-            {star} {star} {star} {star}
-            <span className="total-reviews">{reviews}</span>
-          </section>
+          <h3 className="card-title">{descripcion}</h3>
+          <p className="card-code">Código: {codigo_producto}</p>
           <section className="card-price">
-            <div className="price">
-              <del>{prevPrice}</del> {newPrice}
-            </div>
+            <div className="price">{precio_unitario}</div>
             <div className="bag">
               <BsFillBagFill className="bag-icon" />
             </div>

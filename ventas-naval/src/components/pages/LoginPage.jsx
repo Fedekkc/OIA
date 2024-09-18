@@ -83,14 +83,17 @@ export const LoginPage = () => {
         name,
         email,
         password,
-      });
+      })
 
-      if (response.data.success) {
-        navigate('/dashboard', {
+      if (response.status === 200 || response.status === 201) {
+        console.log(response)
+        navigate('/', {
           replace: true,
           state: {
             logged: true,
             name: response.data.name,
+            token: response.data.token,
+            rol: response.data.rol,
           },
         });
       } else {

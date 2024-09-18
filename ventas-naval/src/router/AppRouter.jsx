@@ -7,39 +7,49 @@ import {
 	RegisterPage,
 } from '../components/pages';
 import { PrivateRoute } from './PrivateRoute';
-import Products from '../Products/Product';
 import PersonalVentas from '../components/personalVentas';
+import Cart from '../components/Cart';
+
+import styled from 'styled-components';
+
+const Container = styled.div`
+	display: flex;
+	flex-direction: row;	
+`;
 
 
-export const AppRouter = ({ query, handleInputChange, result }) => {
+
+export const AppRouter = ({ query, handleInputChange, userRole }) => {
+
+
+
 	return (
 		<>
 			<Routes>
-				<Route 
-          path='/' 
-          element={<Nav query={query} handleInputChange={handleInputChange} />}
-        >
-					<Route 
-            index 
-            element={
-              <>
-                
-                <Products result={result} />
-              </>
-            } 
-          />
+
+					<Route
+						index
+						element={
+							<>
+								<DashboardPage userRole={userRole} >
+								</DashboardPage>	
+							</>
+						}
+					/>
 					<Route path='login' element={<LoginPage />} />
 					<Route path='register' element={<RegisterPage />} />
 					<Route
 						path='dashboard'
 						element={
-							<PrivateRoute>
-								<DashboardPage />
-							</PrivateRoute>
+
+							<DashboardPage />
+
 						}
 					/>
 					<Route path='personal_ventas' element={<PersonalVentas />} />
-				</Route>
+
+					<Route path='/cart' element={ <Cart></Cart> } />
+						
 			</Routes>
 		</>
 	);

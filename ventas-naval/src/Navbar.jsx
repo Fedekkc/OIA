@@ -22,7 +22,7 @@ export const Navbar = () => {
 		<>
 			<header>
 				<h1>
-					<Link to='/'>Logo</Link>
+					<Link to='/'> <img src='escudo naval.jpeg' alt="logo" >  </img> </Link>
 				</h1>
 
 				{state?.logged ? (

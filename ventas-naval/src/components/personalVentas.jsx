@@ -51,14 +51,12 @@ const Td = styled.td`
 
 const Panel = () => {
   const [sectionVisible, setSectionVisible] = useState({
-    login: true,
-    manageProducts: false,
-    pendingOrders: false,
-    deliveredOrders: false,
-    sales: false,
+    manageProducts: true,
+    pendingOrders: true,
+    deliveredOrders: true,
+    sales: true,
   });
 
-  const [loginMessage, setLoginMessage] = useState('');
   const [products, setProducts] = useState([]);
   const [pendingOrders, setPendingOrders] = useState([]);
   const [deliveredOrders, setDeliveredOrders] = useState([]);
@@ -66,76 +64,67 @@ const Panel = () => {
 
   useEffect(() => {
     fetchProducts();
-    fetchPendingOrders();
-    fetchDeliveredOrders();
-    fetchSales();
+
   }, []);
 
   const fetchProducts = async () => {
-    const response = await axios.get('/products');
-    setProducts(response.data);
+    try {
+      const response = await axios.get("http://localhost:5000/productos");
+      setProducts(response.data.productos);
+    } catch (error) {
+      console.error("Error al obtener los productos:", error);
+      alert("Hubo un problema al intentar obtener los productos");
+    }
   };
 
   const fetchPendingOrders = async () => {
-    const response = await axios.get('/orders/pending');
-    setPendingOrders(response.data);
+    try {
+      const response = await axios.get('http://localhost:5000/pedidos/pendientes');
+      setPendingOrders(response.data.pedidos);
+    } catch (error) {
+      console.error('Error al obtener los pedidos pendientes:', error);
+      alert('Hubo un problema al intentar obtener los pedidos pendientes');
+    }
   };
 
   const fetchDeliveredOrders = async () => {
-    const response = await axios.get('/orders/delivered');
-    setDeliveredOrders(response.data);
+    try {
+      const response = await axios.get('http://localhost:5000/pedidos/entregados');
+      setDeliveredOrders(response.data.pedidos);
+    } catch (error) {
+      console.error('Error al obtener los pedidos entregados:', error);
+      alert('Hubo un problema al intentar obtener los pedidos entregados');
+    }
   };
 
   const fetchSales = async () => {
-    const response = await axios.get('/sales');
-    setSales(response.data);
-  };
-
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    const username = e.target.username.value;
-    const password = e.target.password.value;
-
     try {
-      const response = await axios.post('/login', { username, password });
-      if (response.data.success) {
-        setSectionVisible({
-          login: false,
-          manageProducts: true,
-          pendingOrders: true,
-          deliveredOrders: true,
-          sales: true,
-        });
-        fetchProducts();
-        fetchPendingOrders();
-        fetchDeliveredOrders();
-        fetchSales();
-      } else {
-        setLoginMessage('Nombre de usuario o contraseña incorrectos');
-      }
+      const response = await axios.get('http://localhost:5000/facturas');
+      setSales(response.data.ventas);
     } catch (error) {
-      setLoginMessage('Error al iniciar sesión');
+      console.error('Error al obtener las ventas:', error);
+      alert('Hubo un problema al intentar obtener el registro de ventas');
     }
   };
 
   const handleAddProduct = async (e) => {
     e.preventDefault();
     const product = {
-      code: e.target.productCode.value,
-      description: e.target.productDesc.value,
-      price: parseFloat(e.target.productPrice.value),
+      codigo_producto: e.target.productCode.value,
+      descripcion: e.target.productDesc.value,
+      precio_unitario: parseFloat(e.target.productPrice.value),
     };
-    await axios.post('/api/products', product);
+    await axios.post('http://localhost:5000/api/products', product);
     fetchProducts();
   };
 
   const handleDeleteProduct = async (code) => {
-    await axios.delete(`/api/products/${code}`);
+    await axios.delete(`http://localhost:5000/api/products/${code}`);
     fetchProducts();
   };
 
   const handleFinalizeOrder = async (orderId) => {
-    await axios.post(`/api/orders/${orderId}/finalize`);
+    await axios.post(`http://localhost:5000/api/orders/${orderId}/finalize`);
     fetchPendingOrders();
     fetchDeliveredOrders();
     fetchSales();
@@ -146,16 +135,6 @@ const Panel = () => {
       <Header>
         <h1>Panel del Personal de Ventas</h1>
       </Header>
-
-      <Section id="login-section" visible={sectionVisible.login}>
-        <h2>Iniciar Sesión</h2>
-        <form onSubmit={handleLogin}>
-          <input type="text" name="username" placeholder="Nombre de usuario" required />
-          <input type="password" name="password" placeholder="Contraseña" required />
-          <Button type="submit">Iniciar Sesión</Button>
-        </form>
-        <p style={{ color: 'red' }}>{loginMessage}</p>
-      </Section>
 
       <Section id="manage-products-section" visible={sectionVisible.manageProducts}>
         <h2>Gestión de Productos</h2>
@@ -177,10 +156,10 @@ const Panel = () => {
           </thead>
           <tbody>
             {products.map(product => (
-              <tr key={product.code}>
-                <Td>{product.code}</Td>
-                <Td>{product.description}</Td>
-                <Td>${product.price}</Td>
+              <tr key={product.codigo_producto}>
+                <Td>{product.codigo_producto}</Td>
+                <Td>{product.descripcion}</Td>
+                <Td>${product.precio_unitario}</Td>
                 <Td>
                   <Button danger onClick={() => handleDeleteProduct(product.code)}>Eliminar</Button>
                 </Td>

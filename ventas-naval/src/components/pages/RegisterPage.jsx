@@ -99,23 +99,20 @@ export const RegisterPage = () => {
 		try {
 			// Enviar la solicitud de registro al servidor
 			const response = await axios.post('http://localhost:5000/register', {
-				name,
-				email,
-				password,
-			});
+				name: name,
+				email: email,
+				password: password
+			}).then((response) => {
+				console.log(response.data);
+				alert('¡Registro exitoso!');
+				navigate('/login');
+			}).catch((error) => {
+				console.error('Error al registrarse:', error);
+				alert('Hubo un problema al intentar registrarse (email ya registrado)');
+			});	
 
-			if (response.data.success) {
-				navigate('/dashboard', {
-					replace: true,
-					state: {
-						logged: true,
-						name: response.data.name || name,
-					},
-				});
-			} else {
-				// Manejar el caso en que el registro falle
-				alert('No se pudo completar el registro. Inténtalo de nuevo.');
-			}
+
+
 		} catch (error) {
 			console.error('Error al registrarse:', error);
 			alert('Hubo un problema al intentar registrarse');
